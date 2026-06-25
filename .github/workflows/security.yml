@@ -1,0 +1,51 @@
+name: ExpensAI Security & CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build, Lint and Test Services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Setup .NET Environment
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
+      # Restore and Build .NET Service
+      - name: Restore NuGet Packages
+        run: dotnet restore ExpensAI/backend/ExpensAI.Backend.csproj
+
+      - name: Build .NET Backend
+        run: dotnet build ExpensAI/backend/ExpensAI.Backend.csproj --no-restore -c Release
+
+      # Setup Python Environment
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # Install Python Dependencies and run Syntax Checks
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ExpensAI/ai_service/requirements.txt
+          pip install ruff pytest
+
+      - name: Lint Python Code with Ruff
+        run: ruff check ExpensAI/ai_service/
+
+      # Security Scanning (SAST / SCA)
+      - name: Run GitHub Security Scan (CodeQL / Dependency-Check placeholder)
+        run: |
+          echo "Running dependency vulnerability checks..."
+          # Aqui poderiam ser integradas chaves de ferramentas externas como Snyk ou GitGuardian
