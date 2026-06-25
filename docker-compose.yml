@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: expensai
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: expensai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__Default=Server=db;Port=5432;Database=expensai_db;User Id=expensai;Password=secretpassword;
+    ports:
+      - "5000:80"
+
+  ai_service:
+    build: ./ai_service
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://expensai:secretpassword@db:5432/expensai_db
+    ports:
+      - "8000:8000"
+
+volumes:
+  db_data:
