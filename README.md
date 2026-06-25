@@ -51,6 +51,16 @@ User --> .NET Frontend (Upload) --> REST POST /process --> Python FastAPI Servic
 
 ---
 
+## Cibersegurança e Proteção de Dados
+O sistema foi construído seguindo rigorosos padrões de segurança para evitar vazamento de dados e abusos da API:
+- **Higienização e Validação (Allowlist)**: Restrição severa de MimeTypes (apenas `.pdf`, `.csv` e `.ofx`) e limite de tamanho de upload (10MB) no backend. Proteção ativa contra *Path Traversal*.
+- **Controle de Acesso (Zero-Trust)**: Utilização de rotas protegidas e cookies *HttpOnly*, *Secure* e *SameSite=Strict* para tokens JWT e Refresh Tokens, mitigando ataques XSS e CSRF. O uso de `LocalStorage` ou `SessionStorage` é desencorajado e bloqueado para credenciais sensíveis.
+- **Proteção de Origem e Variáveis (CORS/CSP)**: Políticas rígidas de CORS baseadas em variáveis de ambiente, somadas à injeção de *Content-Security-Policy* (CSP) global (incluindo `nosniff`, `X-Frame-Options: DENY`, `HSTS`), protegendo as APIs mesmo para futuros clientes web.
+- **Tratamento de Erros e Logs Seguros**: Middlewares de exceção global em C# e Python garantem que *stack traces* e informações internas de banco de dados nunca sejam vazadas em produção. Os erros reais são registrados isoladamente usando `ILogger` e `logging` sem expor dados sensíveis do usuário.
+- **Ocultação de Source Maps**: Swagger e as páginas de documentação da API (FastAPI `/docs`) são automaticamente desligados em ambiente de produção para blindagem da infraestrutura.
+
+---
+
 ## Diferenciais de Portfólio
 - **Micro-serviço Multi-linguagem** (C# e Python integrados).
 - **Controle Automatizado de Dependências & Segurança** no pipeline (SAST/SCA).
