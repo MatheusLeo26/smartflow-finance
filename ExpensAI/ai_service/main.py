@@ -1,11 +1,32 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import shutil
 import uuid
 import os
 import pandas as pd
-import json
 
-app = FastAPI()
+app = FastAPI(docs_url=None if os.getenv("ENVIRONMENT") == "production" else "/docs",
+              redoc_url=None if os.getenv("ENVIRONMENT") == "production" else "/redoc")
+
+# CORS Setup
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("ALLOWED_ORIGIN", "https://meuapp.com")],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# CSP and Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none';"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    return response
 
 # Simple in‑memory categorization rules (could be replaced by ML model)
 CATEGORY_MAP = {
