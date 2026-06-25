@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/upload_page.dart';
 import 'pages/history_page.dart';
+import 'pages/about_page.dart';
 
 void main() {
   runApp(const ExpensAIApp());
@@ -25,6 +26,7 @@ class ExpensAIApp extends StatelessWidget {
         '/': (context) => const DashboardPage(),
         '/upload': (context) => const UploadPage(),
         '/history': (context) => const HistoryPage(),
+        '/about': (context) => const AboutPage(),
       },
     );
   }

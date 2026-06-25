@@ -10,6 +10,13 @@ class DashboardPage extends StatelessWidget {
         title: const Text('ExpensAI - Dashboard'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Sobre o App',
+            onPressed: () {
+              Navigator.pushNamed(context, '/about');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.sync_problem_outlined),
             tooltip: 'Sincronizações pendentes',
             onPressed: () {},
