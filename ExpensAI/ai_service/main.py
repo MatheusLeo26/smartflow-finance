@@ -44,22 +44,53 @@ def categorize(description: str) -> str:
             return category
     return "Outros"
 
+import logging
+
+# Configuração de Logs Segura (não logar dados sensíveis)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+# Global Exception Handler para não vazar stack traces
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # Loga o erro internamente com a stack trace real
+    logger.error(f"Internal Server Error on {request.url.path}: {exc}", exc_info=True)
+    # Retorna uma mensagem genérica para o cliente
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Ocorreu um erro interno no servidor. Tente novamente mais tarde."},
+    )
+
 @app.post("/process")
 async def process_file(file: UploadFile = File(...)):
-    # Save uploaded file to a temporary location
+    # Validação Básica: Allowlist de MimeTypes
+    allowed_mimes = ["text/csv", "application/pdf", "application/x-ofx", "application/vnd.intu.qbo"]
+    if file.content_type not in allowed_mimes:
+        logger.warning(f"Tentativa de upload com MimeType inválido: {file.content_type}")
+        raise HTTPException(status_code=400, detail="Formato de arquivo não suportado.")
+
     ext = os.path.splitext(file.filename)[1].lower()
     temp_path = os.path.join("/tmp", f"{uuid.uuid4()}{ext}")
+    
     try:
         with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        logger.error(f"Erro ao salvar arquivo no disco: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno ao processar arquivo.")
     finally:
         await file.close()
 
-    # Very simple parser: assume CSV with columns Date, Amount, Description
     try:
+        # Very simple parser: assume CSV with columns Date, Amount, Description
         df = pd.read_csv(temp_path)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {e}")
+        logger.error(f"Erro ao fazer o parse do CSV: {e}")
+        raise HTTPException(status_code=400, detail="O arquivo não é um CSV válido ou está corrompido.")
+    finally:
+        # Clean up temporary file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     # Apply categorization
     df["Category"] = df["Description"].apply(categorize)

@@ -29,6 +29,26 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // Tratamento de Erros Seguro: Substitui StackTraces detalhados por mensagens genéricas em Produção
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            
+            // Opcional: Aqui poderíamos buscar a exceção real com context.Features.Get<IExceptionHandlerFeature>()
+            // e registrar num log centralizado (Serilog, Datadog), sem nunca expor ao frontend.
+            
+            await context.Response.WriteAsJsonAsync(new { 
+                error = "Ocorreu um erro interno no servidor.", 
+                message = "Nossa equipe já foi notificada. Tente novamente mais tarde." 
+            });
+        });
+    });
+}
 
 // Middleware de Segurança: CSP (Content-Security-Policy) e Headers adicionais
 app.Use(async (context, next) =>
